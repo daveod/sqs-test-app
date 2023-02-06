@@ -61,7 +61,7 @@ Resources:
               Resource: !GetAtt MyApiAccessLogs.Arn
 
 ##########################################################################
-#   HTTPREST API                                                             #
+#   REST API                                                             #
 ##########################################################################
   MyApi:
     Type: AWS::Serverless::Api
