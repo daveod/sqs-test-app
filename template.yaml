@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: A Lambda function triggered by an AWS API Gateway REST APIs call through an Amazon SQS Queue for buffering
+
+# Comment each resource section to explain usage
+Resources:
+##########################################################################
+#   SQS Queue                                        #
+##########################################################################
+  # Define the SQS queue
+  MySqsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: MySqsQueue
+
+##########################################################################
+#   Cloudwatch Logs                                                       #
+##########################################################################
+
+  MyApiAccessLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: MyApi-Access-Logs
+      RetentionInDays: 1
+
+##########################################################################
+#   Roles                                                               #
+##########################################################################
+  MyApiRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - apigateway.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+      - PolicyName: AllowSqsIntegration
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'sqs:SendMessage'
+                - 'sqs:GetQueueUrl'
+                - 'sqs:SendMessageBatch'
+              Resource: !GetAtt MySqsQueue.Arn
+            - Effect: Allow
+              Action:
+                - 'logs:CreateLogGroup'
+                - 'logs:CreateLogStream'
+                - 'logs:DescribeLogGroups'
+                - 'logs:DescribeLogStreams'
+                - 'logs:PutLogEvents'
+                - 'logs:GetLogEvents'
+                - 'logs:FilterLogEvents'
+              Resource: !GetAtt MyApiAccessLogs.Arn
+
+##########################################################################
+#   HTTPREST API                                                             #
+##########################################################################
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: "Rest API SQS Integration"
+      StageName: Prod
+      DefinitionBody:
+        'Fn::Transform':
+          Name: 'AWS::Include'
+          Parameters:
+            Location: 'api.yaml'
+      AccessLogSetting: # Enable access logging with Amazon CloudWatch
+        DestinationArn: !GetAtt MyApiAccessLogs.Arn
+        Format: >
+          {"requestId":"$context.requestId",
+          "integration-error":"$context.integration.error",
+          "integration-status":"$context.integration.status",
+          "integration-latency":"$context.integration.latency",
+          "integration-requestId":"$context.integration.requestId",
+          "integration-integrationStatus":"$context.integration.integrationStatus",
+          "response-latency":"$context.responseLatency",
+          "status":"$context.status"}
+      MethodSettings:
+        - MetricsEnabled: true
+      
+
+##########################################################################
+#   Lambda Function                                                      #
+##########################################################################
+  SQSLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      #FunctionName: sqs-app
+      #Description: Lambda to be invoked by the SQS Queue
+      CodeUri: sqs-app
+      Handler: main
+      Runtime: go1.x
+      Architectures:
+        - x86_64
+      Timeout: 30
+      MemorySize: 512
+      Events:
+        MySQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt MySqsQueue.Arn
+            BatchSize: 10
+
+##########################################################################
+#   Outputs                                                              #
+##########################################################################
+Outputs:
+  MyApiEndpoint:
+    Description: "REST API endpoint"
+    Value: !Sub "https://${MyApi}.execute-api.${AWS::Region}.amazonaws.com"
+
+  SQSLambdaFunction:
+    Description: SQSLambdaFunction function name
+    Value: !Ref SQSLambdaFunction
+
+  MySqsQueueARN:
+    Description: SQS queue ARN
+    Value: !GetAtt MySqsQueue.Arn
+
+  MySqsQueueURL:
+    Description: SQS queue URL
+    Value: !Ref MySqsQueue
