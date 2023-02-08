@@ -2,12 +2,10 @@ package handlers
 
 import (
 	"fmt"
-	"net/http"
 
-	"github.com/daveod/aws-lambda-in-go-lang/pkg/team"
+	"github.com/daveod/sqs-test-app/pkg/team"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 )
 
@@ -17,10 +15,7 @@ type ErrorBody struct {
 	ErrorMsg *string `json:"error,omitempty"`
 }
 
-func GetTeam(req events.APIGatewayProxyRequest, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (
-	*events.APIGatewayProxyResponse,
-	error,
-) {
+func GetTeam(req events.APIGatewayProxyRequest, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*team.Team, error) {
 	fmt.Println("In GetTeam")
 	nickName := req.QueryStringParameters["nickName"]
 	fmt.Printf("nickName query = %s\n", nickName)
@@ -28,10 +23,10 @@ func GetTeam(req events.APIGatewayProxyRequest, tableName string, dynaClient dyn
 		// Get single Team
 		result, err := team.FetchTeam(nickName, tableName, dynaClient)
 		if err != nil {
-			return err.Error()
+			return "", err
 		}
 
-		return result
+		return result, nil
 	}
 
 	// Get list of Teams
@@ -73,9 +68,9 @@ func DeleteTeam(req events.APIGatewayProxyRequest, tableName string, dynaClient 
 	if err != nil {
 		return err.Error()
 	}
-	return nil
+	return nil, nil
 }
 
 func UnhandledMethod() (*events.APIGatewayProxyResponse, error) {
-	return ErrorMethodNotAllowed
+	return nil, ErrorMethodNotAllowed
 }
