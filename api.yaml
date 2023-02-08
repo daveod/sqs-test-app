@@ -1,30 +1,40 @@
-openapi: "3.0.1"
+---
+swagger: "2.0"
 info:
-  title: "Queue Based Leveling Example"
-  version: "2021-03-31 17:32:29UTC"
+  version: "2023-02-06T18:36:04Z"
+  title: "Rest API SQS Integration"
+#Original Line - host: "b3rhwbmk4k.execute-api.eu-west-1.amazonaws.com"
+host: "${MyApi}.execute-api.${AWS::Region}.amazonaws.com"
+basePath: "/prod"
+schemes:
+- "https"
 paths:
-  /submit:
-    post:
+  /sqstestapp:
+    x-amazon-apigateway-any-method:
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
       responses:
-        default:
-          description: "Response for POST /"
+        "200":
+          description: "200 response"
+          schema:
+            $ref: "#/definitions/Empty"
       x-amazon-apigateway-integration:
-        type: "aws_proxy"
-        integrationSubtype: "SQS-SendMessage"
+        uri: "arn:aws:apigateway:${AWS::Region}:sqs:path/082739058874/MySqsQueue"
         credentials:
           Fn::GetAtt: [MyApiRole, Arn]
-        connectionType: "INTERNET"
-        payloadFormatVersion: "1.0"
+        httpMethod: "ANY"
+        responses:
+          default:
+            statusCode: "200"
         requestParameters:
-          MessageBody: "$request.body"
-          QueueUrl:
-            Ref: MySqsQueue
-
-x-amazon-apigateway-cors:
-  allowMethods:
-  - "*"
-  maxAge: 0
-  allowCredentials: false
-  allowOrigins:
-  - "*"
-x-amazon-apigateway-importexport-version: "1.0"
+          integration.request.header.Content-Type: "'application/x-www-form-urlencoded'"
+        requestTemplates:
+          application/json: "Action=SendMessage&MessageBody=$input.body"
+        passthroughBehavior: "when_no_templates"
+        type: "aws"
+definitions:
+  Empty:
+    type: "object"
+    title: "Empty Schema"

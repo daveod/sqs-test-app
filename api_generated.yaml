@@ -1,0 +1,39 @@
+---
+swagger: "2.0"
+info:
+  version: "2023-02-06T18:36:04Z"
+  title: "Rest API SQS Integration"
+#Original Line - host: "b3rhwbmk4k.execute-api.eu-west-1.amazonaws.com"
+host: "${MyApi}.execute-api.${AWS::Region}.amazonaws.com"
+basePath: "/prod"
+schemes:
+- "https"
+paths:
+  /sqstestapp:
+    x-amazon-apigateway-any-method:
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      responses:
+        "200":
+          description: "200 response"
+          schema:
+            $ref: "#/definitions/Empty"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:${AWS::Region}:sqs:path/082739058874/MySqsQueue"
+        credentials: "arn:aws:iam::082739058874:role/sqs-test-app-MyApiRole-BVINSVWLNIP7"
+        httpMethod: "ANY"
+        responses:
+          default:
+            statusCode: "200"
+        requestParameters:
+          integration.request.header.Content-Type: "'application/x-www-form-urlencoded'"
+        requestTemplates:
+          application/json: "Action=SendMessage&MessageBody=$input.body"
+        passthroughBehavior: "when_no_templates"
+        type: "aws"
+definitions:
+  Empty:
+    type: "object"
+    title: "Empty Schema"

@@ -55,7 +55,7 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       Name: Rest API SQS Integration
-      StageName: Prod
+      StageName: prod
       DefinitionBody:
         Fn::Transform:
           Name: AWS::Include
@@ -72,8 +72,6 @@ Resources:
           "response-latency":"$context.responseLatency", "status":"$context.status"}
 
           '
-      MethodSettings:
-      - MetricsEnabled: true
   SQSLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:

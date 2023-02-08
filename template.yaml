@@ -67,7 +67,7 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       Name: "Rest API SQS Integration"
-      StageName: Prod
+      StageName: prod
       DefinitionBody:
         'Fn::Transform':
           Name: 'AWS::Include'
@@ -84,8 +84,8 @@ Resources:
           "integration-integrationStatus":"$context.integration.integrationStatus",
           "response-latency":"$context.responseLatency",
           "status":"$context.status"}
-      MethodSettings:
-        - MetricsEnabled: true
+      #MethodSettings:
+      #  - MetricsEnabled: true
       
 
 ##########################################################################
@@ -109,6 +109,17 @@ Resources:
           Properties:
             Queue: !GetAtt MySqsQueue.Arn
             BatchSize: 10
+
+##########################################################################
+#   Dynamo Table                                                      #
+##########################################################################
+  teamDDBTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: teams
+      PrimaryKey:
+        Name: nickName
+        Type: String
 
 ##########################################################################
 #   Outputs                                                              #
