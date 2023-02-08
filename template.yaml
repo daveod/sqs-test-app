@@ -116,7 +116,7 @@ Resources:
   teamDDBTable:
     Type: AWS::Serverless::SimpleTable
     Properties:
-      TableName: teams
+      TableName: TeamsTable
       PrimaryKey:
         Name: nickName
         Type: String

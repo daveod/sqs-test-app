@@ -93,6 +93,13 @@ Resources:
             BatchSize: 10
     Metadata:
       SamResourceId: SQSLambdaFunction
+  teamDDBTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: teams
+      PrimaryKey:
+        Name: nickName
+        Type: String
 Outputs:
   MyApiEndpoint:
     Description: REST API endpoint
