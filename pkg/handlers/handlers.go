@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/daveod/sqs-test-app/pkg/team"
@@ -23,7 +24,7 @@ func GetTeam(req events.APIGatewayProxyRequest, tableName string, dynaClient dyn
 		// Get single Team
 		result, err := team.FetchTeam(nickName, tableName, dynaClient)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
 		return result, nil
@@ -32,32 +33,27 @@ func GetTeam(req events.APIGatewayProxyRequest, tableName string, dynaClient dyn
 	// Get list of Teams
 	result, err := team.FetchTeams(tableName, dynaClient)
 	if err != nil {
-		return err.Error()
+		return nil, err
 	}
 
-	return result
+	fmt.Printf("nGetTeam Result = %v\n", result)
+	return nil, nil
 }
 
-func CreateTeam(req events.APIGatewayProxyRequest, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (
-	*events.APIGatewayProxyResponse,
-	error,
-) {
-	result, err := team.CreateTeam(req, tableName, dynaClient)
+func CreateTeam(body string, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*team.Team, error) {
+	result, err := team.CreateTeam(body, tableName, dynaClient)
 	if err != nil {
-		return err.Error()
+		return nil, err
 	}
-	return result
+	return result, nil
 }
 
-func UpdateTeam(req events.APIGatewayProxyRequest, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (
-	*events.APIGatewayProxyResponse,
-	error,
-) {
+func UpdateTeam(req events.APIGatewayProxyRequest, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*team.Team, error) {
 	result, err := team.UpdateTeam(req, tableName, dynaClient)
 	if err != nil {
-		return err.Error()
+		return nil, err
 	}
-	return result
+	return result, nil
 }
 
 func DeleteTeam(req events.APIGatewayProxyRequest, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (
@@ -66,11 +62,11 @@ func DeleteTeam(req events.APIGatewayProxyRequest, tableName string, dynaClient 
 ) {
 	err := team.DeleteTeam(req, tableName, dynaClient)
 	if err != nil {
-		return err.Error()
+		return nil, err
 	}
 	return nil, nil
 }
 
-func UnhandledMethod() (*events.APIGatewayProxyResponse, error) {
-	return nil, ErrorMethodNotAllowed
+func UnhandledMethod() error {
+	return errors.New(ErrorMethodNotAllowed)
 }

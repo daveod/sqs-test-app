@@ -78,7 +78,7 @@ func CreateTeam(body string, tableName string, dynaClient dynamodbiface.DynamoDB
 	error,
 ) {
 	fmt.Println("In CreateTeam")
-	fmt.Printf("req.Body = %v\n", body)
+	fmt.Printf("body = %v\n", body)
 
 	var t Team
 	if err := json.Unmarshal([]byte(body), &t); err != nil {
@@ -88,10 +88,11 @@ func CreateTeam(body string, tableName string, dynaClient dynamodbiface.DynamoDB
 	// Check if Team exists
 	currentTeam, _ := FetchTeam(t.NickName, tableName, dynaClient)
 	if currentTeam != nil && len(currentTeam.NickName) != 0 {
+		fmt.Println("Team already exists")
 		return nil, errors.New(ErrorTeamAlreadyExists)
 	}
 	// Save Team
-
+	fmt.Println("Saving Team")
 	av, err := dynamodbattribute.MarshalMap(t)
 	if err != nil {
 		return nil, errors.New(ErrorCouldNotMarshalItem)

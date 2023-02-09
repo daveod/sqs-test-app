@@ -103,6 +103,17 @@ Resources:
         - x86_64
       Timeout: 30
       MemorySize: 512
+      Policies:
+      - Statement:
+        - Sid: SSMDescribeParametersPolicy
+          Effect: Allow
+          Action:
+          - 'dynamodb:DeleteItem'
+          - 'dynamodb:GetItem'
+          - 'dynamodb:PutItem'
+          - 'dynamodb:Scan'
+          - 'dynamodb:UpdateItem'
+          Resource: !GetAtt teamDDBTable.Arn
       Events:
         MySQSEvent:
           Type: SQS
