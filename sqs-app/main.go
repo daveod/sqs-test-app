@@ -26,7 +26,9 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 	for _, message := range sqsEvent.Records {
 		fmt.Printf("The message %s for event source %s = %s \n", message.MessageId, message.EventSource, message.Body)
 
-		switch message.Body {
+		handlers.CreateTeam(message.Body, tableName, dynaClient)
+
+		/*switch message.Body {
 		case "GET":
 			return handlers.GetTeam(req, tableName, dynaClient)
 		case "POST":
@@ -37,7 +39,7 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 			return handlers.DeleteTeam(req, tableName, dynaClient)
 		default:
 			return handlers.UnhandledMethod()
-		}
+		}*/
 	}
 
 	return nil

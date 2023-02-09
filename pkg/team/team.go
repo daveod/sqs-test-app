@@ -1,11 +1,9 @@
-package Team
+package team
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
-	"github.com/daveod/sqs-test-app/pkg/validators"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
@@ -27,9 +25,9 @@ var (
 )
 
 type Team struct {
-	NickName     string `json:"nickName"`
-	City string `json:"city"`
-	ShortName  string `json:"shortName"`
+	NickName  string `json:"nickName"`
+	City      string `json:"city"`
+	ShortName string `json:"shortName"`
 }
 
 func FetchTeam(nickName, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*Team, error) {
@@ -69,23 +67,23 @@ func FetchTeams(tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*[]Team
 	}
 	item := new([]Team)
 	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, item)
+	if err != nil {
+		return nil, errors.New(ErrorFailedToUnmarshalRecord)
+	}
 	return item, nil
 }
 
-func CreateTeam(req events.APIGatewayProxyRequest, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (
+func CreateTeam(body string, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (
 	*Team,
 	error,
 ) {
 	fmt.Println("In CreateTeam")
-	fmt.Printf("req.Body = %v\n", req.Body)
+	fmt.Printf("req.Body = %v\n", body)
 
 	var t Team
-	if err := json.Unmarshal([]byte(req.Body), &t); err != nil {
+	if err := json.Unmarshal([]byte(body), &t); err != nil {
 		fmt.Printf("err = %v\n", err)
 		return nil, errors.New(ErrorInvalidTeamData)
-	}
-	if !validators.IsEmailValid(t.NickName) {
-		return nil, errors.New(ErrorInvalidEmail)
 	}
 	// Check if Team exists
 	currentTeam, _ := FetchTeam(t.NickName, tableName, dynaClient)

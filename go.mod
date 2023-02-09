@@ -1,4 +1,4 @@
-module sqs-app
+module github.com/daveod/sqs-test-app
 
 go 1.19
 
