@@ -75,8 +75,7 @@ Resources:
   SQSLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: SQSLambdaFunction
-      Handler: main
+      Handler: sqs-app
       Runtime: go1.x
       Architectures:
       - x86_64
@@ -105,6 +104,7 @@ Resources:
               - MySqsQueue
               - Arn
             BatchSize: 10
+      CodeUri: SQSLambdaFunction
     Metadata:
       SamResourceId: SQSLambdaFunction
   teamDDBTable:

@@ -96,8 +96,8 @@ Resources:
     Properties:
       #FunctionName: sqs-app
       #Description: Lambda to be invoked by the SQS Queue
-      CodeUri: sqs-test-app/
-      Handler: main
+      #CodeUri: sqs-test-app
+      Handler: sqs-app
       Runtime: go1.x
       Architectures:
         - x86_64
