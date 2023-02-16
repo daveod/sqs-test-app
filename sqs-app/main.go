@@ -46,7 +46,7 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 }
 
 func main() {
-	fmt.Println("We are in main function")
+	fmt.Println("We are in the main function")
 	region := os.Getenv("AWS_REGION")
 	awsSession, err := session.NewSession(&aws.Config{
 		Region: aws.String(region)},
