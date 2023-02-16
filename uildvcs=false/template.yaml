@@ -1,0 +1,135 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: A Lambda function triggered by an AWS API Gateway REST APIs call through
+  an Amazon SQS Queue for buffering
+Resources:
+  MySqsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: MySqsQueue
+  MyApiAccessLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: MyApi-Access-Logs
+      RetentionInDays: 1
+  MyApiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - apigateway.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+      - PolicyName: AllowSqsIntegration
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - sqs:SendMessage
+            - sqs:GetQueueUrl
+            - sqs:SendMessageBatch
+            Resource:
+              Fn::GetAtt:
+              - MySqsQueue
+              - Arn
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:DescribeLogGroups
+            - logs:DescribeLogStreams
+            - logs:PutLogEvents
+            - logs:GetLogEvents
+            - logs:FilterLogEvents
+            Resource:
+              Fn::GetAtt:
+              - MyApiAccessLogs
+              - Arn
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: Rest API SQS Integration
+      StageName: prod
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: ../api.yaml
+      AccessLogSetting:
+        DestinationArn:
+          Fn::GetAtt:
+          - MyApiAccessLogs
+          - Arn
+        Format: '{"requestId":"$context.requestId", "integration-error":"$context.integration.error",
+          "integration-status":"$context.integration.status", "integration-latency":"$context.integration.latency",
+          "integration-requestId":"$context.integration.requestId", "integration-integrationStatus":"$context.integration.integrationStatus",
+          "response-latency":"$context.responseLatency", "status":"$context.status"}
+
+          '
+  SQSLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: sqs-app
+      Runtime: go1.x
+      Architectures:
+      - x86_64
+      Timeout: 30
+      MemorySize: 512
+      Policies:
+      - Statement:
+        - Sid: SSMDescribeParametersPolicy
+          Effect: Allow
+          Action:
+          - dynamodb:DeleteItem
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:Scan
+          - dynamodb:UpdateItem
+          Resource:
+            Fn::GetAtt:
+            - teamDDBTable
+            - Arn
+      Events:
+        MySQSEvent:
+          Type: SQS
+          Properties:
+            Queue:
+              Fn::GetAtt:
+              - MySqsQueue
+              - Arn
+            BatchSize: 10
+      CodeUri: SQSLambdaFunction
+    Metadata:
+      SamResourceId: SQSLambdaFunction
+  teamDDBTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: TeamsTable
+      PrimaryKey:
+        Name: nickName
+        Type: String
+Outputs:
+  MyApiEndpoint:
+    Description: REST API endpoint
+    Value:
+      Fn::Sub: https://${MyApi}.execute-api.${AWS::Region}.amazonaws.com
+  SQSLambdaFunction:
+    Description: SQSLambdaFunction function name
+    Value:
+      Ref: SQSLambdaFunction
+  MySqsQueueARN:
+    Description: SQS queue ARN
+    Value:
+      Fn::GetAtt:
+      - MySqsQueue
+      - Arn
+  MySqsQueueURL:
+    Description: SQS queue URL
+    Value:
+      Ref: MySqsQueue
