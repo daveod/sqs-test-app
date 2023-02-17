@@ -5,12 +5,9 @@ Description: A Lambda function triggered by an AWS API Gateway REST APIs call th
 Resources:
   MySqsQueue:
     Type: AWS::SQS::Queue
-    Properties:
-      QueueName: MySqsQueue
   MyApiAccessLogs:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: MyApi-Access-Logs
       RetentionInDays: 1
   MyApiRole:
     Type: AWS::IAM::Role
@@ -110,7 +107,6 @@ Resources:
   teamDDBTable:
     Type: AWS::Serverless::SimpleTable
     Properties:
-      TableName: TeamsTable
       PrimaryKey:
         Name: nickName
         Type: String

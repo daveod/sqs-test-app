@@ -10,7 +10,7 @@ Resources:
   # Define the SQS queue
   MySqsQueue:
     Type: AWS::SQS::Queue
-    Properties:
+    #Properties:
       #QueueName: MySqsQueue
 
 ##########################################################################
