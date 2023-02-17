@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: A Lambda function triggered by an AWS API Gateway REST APIs call through
   an Amazon SQS Queue for buffering
 Resources:
-  MySqsQueue:
+  MyQueue:
     Type: AWS::SQS::Queue
   MyApiAccessLogs:
     Type: AWS::Logs::LogGroup

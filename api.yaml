@@ -21,7 +21,7 @@ paths:
           schema:
             $ref: "#/definitions/Empty"
       x-amazon-apigateway-integration:
-        uri: "arn:aws:apigateway:${AWS::Region}:sqs:path/082739058874/MySqsQueue"
+        uri: !GetAtt MySqsQueue.Arn
         credentials:
           Fn::GetAtt: [MyApiRole, Arn]
         httpMethod: "ANY"
