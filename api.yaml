@@ -21,10 +21,10 @@ paths:
           schema:
             $ref: "#/definitions/Empty"
       x-amazon-apigateway-integration:
-        uri: !GetAtt MySqsQueue.Arn
         credentials:
           Fn::GetAtt: [MyApiRole, Arn]
         httpMethod: "ANY"
+        uri: !Sub "arn:aws:apigateway:${AWS::Region}:sqs:path/082739058874/${QueueName}"
         responses:
           default:
             statusCode: "200"

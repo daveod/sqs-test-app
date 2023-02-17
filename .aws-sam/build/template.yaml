@@ -2,9 +2,17 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: A Lambda function triggered by an AWS API Gateway REST APIs call through
   an Amazon SQS Queue for buffering
+Parameters:
+  QueueName:
+    Description: The queue name for integration with API Gateway
+    Type: String
+    Default: api-gateway-queue
 Resources:
-  MyQueue:
+  MySqsQueue:
     Type: AWS::SQS::Queue
+    Properties:
+      QueueName:
+        Ref: QueueName
   MyApiAccessLogs:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -54,10 +62,47 @@ Resources:
       Name: Rest API SQS Integration
       StageName: prod
       DefinitionBody:
-        Fn::Transform:
-          Name: AWS::Include
-          Parameters:
-            Location: ../../api.yaml
+        swagger: '2.0'
+        info:
+          version: '2023-02-06T18:36:04Z'
+          title: Rest API SQS Integration
+        host: ${MyApi}.execute-api.${AWS::Region}.amazonaws.com
+        basePath: /prod
+        schemes:
+        - https
+        paths:
+          /sqstestapp:
+            x-amazon-apigateway-any-method:
+              consumes:
+              - application/json
+              produces:
+              - application/json
+              responses:
+                '200':
+                  description: 200 response
+                  schema:
+                    $ref: '#/definitions/Empty'
+              x-amazon-apigateway-integration:
+                credentials:
+                  Fn::GetAtt:
+                  - MyApiRole
+                  - Arn
+                httpMethod: ANY
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:sqs:path/082739058874/${QueueName}
+                responses:
+                  default:
+                    statusCode: '200'
+                requestParameters:
+                  integration.request.header.Content-Type: '''application/x-www-form-urlencoded'''
+                requestTemplates:
+                  application/json: Action=SendMessage&MessageBody=$input.body
+                passthroughBehavior: when_no_templates
+                type: aws
+        definitions:
+          Empty:
+            type: object
+            title: Empty Schema
       AccessLogSetting:
         DestinationArn:
           Fn::GetAtt:
@@ -69,6 +114,13 @@ Resources:
           "response-latency":"$context.responseLatency", "status":"$context.status"}
 
           '
+  teamDDBTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: TeamsTable
+      PrimaryKey:
+        Name: nickName
+        Type: String
   SQSLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -104,12 +156,6 @@ Resources:
       CodeUri: SQSLambdaFunction
     Metadata:
       SamResourceId: SQSLambdaFunction
-  teamDDBTable:
-    Type: AWS::Serverless::SimpleTable
-    Properties:
-      PrimaryKey:
-        Name: nickName
-        Type: String
 Outputs:
   MyApiEndpoint:
     Description: REST API endpoint

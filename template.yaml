@@ -1,7 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: A Lambda function triggered by an AWS API Gateway REST APIs call through an Amazon SQS Queue for buffering
-
+Parameters:
+  QueueName:
+    Description: The queue name for integration with API Gateway
+    Type: String
+    Default: api-gateway-queue
+    
 # Comment each resource section to explain usage
 Resources:
 ##########################################################################
@@ -10,8 +15,8 @@ Resources:
   # Define the SQS queue
   MySqsQueue:
     Type: AWS::SQS::Queue
-    #Properties:
-      #QueueName: MySqsQueue
+    Properties:
+      QueueName: !Ref QueueName
 
 ##########################################################################
 #   Cloudwatch Logs                                                       #
@@ -69,10 +74,46 @@ Resources:
       Name: "Rest API SQS Integration"
       StageName: prod
       DefinitionBody:
-        'Fn::Transform':
-          Name: 'AWS::Include'
-          Parameters:
-            Location: 'api.yaml'
+        swagger: "2.0"
+        info:
+          version: "2023-02-06T18:36:04Z"
+          title: "Rest API SQS Integration"
+        #Original Line - host: "b3rhwbmk4k.execute-api.eu-west-1.amazonaws.com"
+        host: "${MyApi}.execute-api.${AWS::Region}.amazonaws.com"
+        basePath: "/prod"
+        schemes:
+        - "https"
+        paths:
+          /sqstestapp:
+            x-amazon-apigateway-any-method:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                "200":
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+              x-amazon-apigateway-integration:
+                credentials:
+                  Fn::GetAtt: [MyApiRole, Arn]
+                httpMethod: "ANY"
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:sqs:path/082739058874/${QueueName}"
+                responses:
+                  default:
+                    statusCode: "200"
+                requestParameters:
+                  integration.request.header.Content-Type: "'application/x-www-form-urlencoded'"
+                requestTemplates:
+                  application/json: "Action=SendMessage&MessageBody=$input.body"
+                passthroughBehavior: "when_no_templates"
+                type: "aws"
+        definitions:
+          Empty:
+            type: "object"
+            title: "Empty Schema"
+
       AccessLogSetting: # Enable access logging with Amazon CloudWatch
         DestinationArn: !GetAtt MyApiAccessLogs.Arn
         Format: >
@@ -86,7 +127,17 @@ Resources:
           "status":"$context.status"}
       #MethodSettings:
       #  - MetricsEnabled: true
-      
+
+##########################################################################
+#   Dynamo Table                                                      #
+##########################################################################
+  teamDDBTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: TeamsTable
+      PrimaryKey:
+        Name: nickName
+        Type: String      
 
 ##########################################################################
 #   Lambda Function                                                      #
@@ -120,17 +171,6 @@ Resources:
           Properties:
             Queue: !GetAtt MySqsQueue.Arn
             BatchSize: 10
-
-##########################################################################
-#   Dynamo Table                                                      #
-##########################################################################
-  teamDDBTable:
-    Type: AWS::Serverless::SimpleTable
-    Properties:
-      #TableName: TeamsTable
-      PrimaryKey:
-        Name: nickName
-        Type: String
 
 ##########################################################################
 #   Outputs                                                              #
