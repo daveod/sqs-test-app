@@ -19,12 +19,14 @@ var (
 	dynaClient dynamodbiface.DynamoDBAPI
 )
 
-const tableName = "TeamsTable"
-
 func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 
 	for _, message := range sqsEvent.Records {
 		fmt.Printf("The message %s for event source %s = %s \n", message.MessageId, message.EventSource, message.Body)
+
+		stackName := os.Getenv("MyStack")
+		tableName := stackName + "-TeamsTable"
+		fmt.Printf("Table Name = %s \n", tableName)
 
 		handlers.CreateTeam(message.Body, tableName, dynaClient)
 

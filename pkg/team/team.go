@@ -95,6 +95,7 @@ func CreateTeam(body string, tableName string, dynaClient dynamodbiface.DynamoDB
 	fmt.Println("Saving Team")
 	av, err := dynamodbattribute.MarshalMap(t)
 	if err != nil {
+		fmt.Printf("Error Saving - err = %v\n", err)
 		return nil, errors.New(ErrorCouldNotMarshalItem)
 	}
 
